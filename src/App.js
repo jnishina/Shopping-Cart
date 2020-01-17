@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import "rbx/index.css";
-import { Card, Column, Container } from "rbx";
+import { Card, Column, Container, Button } from "rbx";
 import { makeStyles } from "@material-ui/core/styles";
 import Divider from '@material-ui/core/Divider';
 
@@ -9,7 +9,8 @@ const productStyles = makeStyles(theme => ({
     paddingTop: 20
   },
   card: {
-    height: 450,
+    height: 500,
+    width: 250,
     textAlign: 'center'
   },
   image: {
@@ -17,20 +18,47 @@ const productStyles = makeStyles(theme => ({
     paddingBottom: -20
   },
   divider: {
-    position: 'static',
-    bottom: -20
+    marginTop: 10
   },
   title: {
-    marginTop: -10, 
-    height: 60
+    marginTop: -12, 
+    height: 60,
+    fontSize: 15
   },
   price: {
-    marginTop: 5
+    marginTop: 10,
+    fontSize: 15
+  },
+  description: {
+    fontSize: 12,
+    paddingBottom: 5
+  },
+  sizes: {
+    fontSize: 10,
+    width: 25,
+    height: 25,
+    marginRight: 5,
+    marginTop: 15
   }
 }));
 
+const handlePrices = (price) => {
+  var formatted = price.toFixed(2);
+  return formatted
+}
+
+const handleDescriptions = (description) => {
+  if (description == "") {
+    return "No description"
+  }
+  else {
+    return description
+  }
+}
+
 const ProductList = ({products}) => {
   const styles = productStyles();
+  const sizes = ['S', 'M', 'L', 'XL']
 
   return(
     <Column.Group vcentered multiline className={styles.container}>
@@ -39,9 +67,14 @@ const ProductList = ({products}) => {
                 <Card className={styles.card}>
                   <Card.Image className={styles.image}><img src={`/data/products/${product.sku}_1.jpg`} alt={product.sku}/></Card.Image>
                   <Card.Content key={product.sku}> 
-                    <h4 className={styles.title}>{product.title}</h4>
+                    <h5 className={styles.title}>
+                      {product.title}
+                      <p className={styles.description}>{handleDescriptions(product.description)}</p>
+                    </h5>
+                    {/* <p className={styles.description}>{handleDescriptions(product.description)}</p> */}
+                    {sizes.map(size => <Button className={styles.sizes}>{size}</Button>)}
                     <Divider variant="middle" className={styles.divider}/>
-                    <h6 className={styles.price}>{`$${product.price}`}</h6>
+                    <h6 className={styles.price}>{`$${handlePrices(product.price)}`}</h6>
                   </Card.Content>
                 </Card>
               </Column>)}
