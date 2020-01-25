@@ -7,10 +7,10 @@ import Sidebar from "react-sidebar";
 
 const productStyles = makeStyles(theme => ({
   container: {
-    marginTop: 20,
+    marginTop: 70,
     marginLeft: 20,
-    marginRight: 20
-
+    marginRight: 20, 
+    minWidth: 1000
   },
   card: {
     height: 590,
@@ -46,12 +46,23 @@ const productStyles = makeStyles(theme => ({
     width: 25,
     height: 25,
     marginRight: 5,
-    marginTop: 15
+    marginTop: 5,
   },
   addToCart: {
     backgroundColor: '#d4d4d4',
     marginTop: -15
   },
+  cart: {
+    backgroundColor: '#d4d4d4',
+    height: 45,
+    borderRadius: '0px 0px 0px 6px',
+    float: 'right',
+    marginLeft: 20
+  },
+  cartIcon: {
+    height: 30,
+    width: 40,
+  }
 }));
 
 const cartStyles = makeStyles(theme => ({
@@ -86,7 +97,12 @@ const cartStyles = makeStyles(theme => ({
     position: 'fixed',
     bottom: 0,
     right: 0,
+    height: 100,
     width: '100%'
+  },
+  emptyMessage: {
+    width: 431,
+    textAlign: 'center'
   }
 }));
 
@@ -108,7 +124,7 @@ const calculateTotal = (cartitems) => {
   var totalPrice = 0
   var i;
   for (i = 0; i < cartitems.length; i++) {
-    totalPrice += cartitems[i].price;
+    totalPrice += cartitems[i].product.price;
   }
 
   return totalPrice
@@ -116,37 +132,63 @@ const calculateTotal = (cartitems) => {
 
 const ShoppingCart = ({cartitems}) => {
   const classes = cartStyles();
-  
-  return(
-    <div>
-    <List>
-      {cartitems.map(cartitem => 
-        <List.Item key={cartitem.sku}>
-          <img className={classes.image} src={`/data/products/${cartitem.sku}_1.jpg`} />
-          <div className={classes.item}>
-          <div className={classes.textBox}>
-            <h5 className={classes.title}>{cartitem.title}<br/></h5>
-            <h6 className={classes.description}>
-              {handleDescriptions(cartitem.description)}<br/>
-            </h6>
-          </div>
-            <h6 className={classes.price}>
-              {`$${handlePrices(cartitem.price)}`}
-            </h6>
-          </div>
-        </List.Item>
-      )}
-    </List>
-      <Footer className={classes.total}>
-      {`Total Price: $${handlePrices(calculateTotal(cartitems))}`}
-      </Footer>
-    </div>
-  )
+
+  if (cartitems.length === 0) {
+    return(
+      <div className={classes.emptyMessage}>
+        <h5>Add some items to your cart!</h5>
+      </div>
+    );
+  }
+
+  else {
+    return(
+      <div>
+      <List>
+        {cartitems.map(cartitem => 
+          <List.Item key={cartitem.product.sku}>
+            <img className={classes.image} src={`/data/products/${cartitem.product.sku}_1.jpg`} />
+            <div className={classes.item}>
+            <div className={classes.textBox}>
+              <h5 className={classes.title}>{cartitem.product.title}<br/></h5>
+              <h6 className={classes.description}>
+                {handleDescriptions(cartitem.product.description)}<br/>
+                Size: {cartitem.size}
+              </h6>
+            </div>
+              <h6 className={classes.price}>
+                {`$${handlePrices(cartitem.product.price)}`}
+              </h6>
+            </div>
+          </List.Item>
+        )}
+      </List>
+        <Footer className={classes.total}>
+        {`Total: $${handlePrices(calculateTotal(cartitems))}`}
+        </Footer>
+      </div>
+    );
+  }
+}
+
+
+const selectSize = (size, selectedSize) => (
+  selectedSize = size
+);
+
+const addItem = (incart, item, selectedSize) => {
+  if (selectedSize == '') {
+    alert('Please select a size');
+  }
+  else {
+    incart.setSelected(incart.selected.concat(item));
+  }
 }
 
 const ProductList = ({products, sidebar, incart}) => {
   const styles = productStyles();
-  const sizes = ['S', 'M', 'L', 'XL']
+  const sizes = ['S', 'M', 'L', 'XL'];
+  var selectedSize = '';
 
   return(
     <Column.Group vcentered multiline className={styles.container}>
@@ -159,12 +201,13 @@ const ProductList = ({products, sidebar, incart}) => {
                       {product.title}
                       <p className={styles.description}>{handleDescriptions(product.description)}</p>
                     </h5>
-                    {sizes.map(size => <Button className={styles.sizes}>{size}</Button>)}
+                    {sizes.map(size => <Button className={styles.sizes} color={'blue'} onClick={() => selectedSize = size}>{size}</Button>)}
                     <Divider variant="middle" className={styles.divider}/>
                     <h6 className={styles.price}>{`$${handlePrices(product.price)}`}</h6>
                   </Card.Content>
                   <Button className={styles.addToCart} 
-                          onClick={() => {sidebar.setSidebar(true); incart.setSelected(incart.selected.concat(product))}}>
+                          onClick={() => {sidebar.setSidebar(true); 
+                                          addItem(incart, {product, size: selectedSize}, selectedSize)}}>
                           Add to cart
                   </Button>
                 </Card>
@@ -199,6 +242,9 @@ const App = () => {
              pullRight={true}
              onSetOpen={() => setSidebar(false)}
              styles={{ sidebar: { background: "white" } }}>
+        <Button className={styles.cart} onClick={() => setSidebar(true)}>
+          <img src={`/data/shopping-cart.png`} className={styles.cartIcon}/>
+        </Button>
         <ProductList products={products} sidebar={{sidebar, setSidebar}} incart={{selected, setSelected}}/>
       </Sidebar>
     </div>
