@@ -81,8 +81,9 @@ const cartStyles = makeStyles(theme => ({
   },
   price: {
     marginLeft: 80,
-    marginTop: 30,
-    fontSize: 15
+    marginTop: 18,
+    fontSize: 15,
+    height: 15
   },
   textBox: {
     width: 200,
@@ -102,7 +103,13 @@ const cartStyles = makeStyles(theme => ({
   },
   emptyMessage: {
     width: 431,
-    textAlign: 'center'
+    textAlign: 'center',
+    marginTop: 20
+  },
+  x: {
+    width: 13,
+    height: 13,
+    marginLeft: 107
   }
 }));
 
@@ -133,7 +140,7 @@ const calculateTotal = (cartitems) => {
 const ShoppingCart = ({cartitems}) => {
   const classes = cartStyles();
 
-  if (cartitems.length === 0) {
+  if (cartitems.selected.length === 0) {
     return(
       <div className={classes.emptyMessage}>
         <h5>Add some items to your cart!</h5>
@@ -145,7 +152,7 @@ const ShoppingCart = ({cartitems}) => {
     return(
       <div>
       <List>
-        {cartitems.map(cartitem => 
+        {cartitems.selected.map(cartitem => 
           <List.Item key={cartitem.product.sku}>
             <img className={classes.image} src={`/data/products/${cartitem.product.sku}_1.jpg`} />
             <div className={classes.item}>
@@ -156,15 +163,18 @@ const ShoppingCart = ({cartitems}) => {
                 Size: {cartitem.size}
               </h6>
             </div>
+            <div>
+              <img src={`/data/x.png`} className={classes.x} onClick={() => removeItem(cartitems, cartitem.key)}/>
               <h6 className={classes.price}>
                 {`$${handlePrices(cartitem.product.price)}`}
               </h6>
+            </div>
             </div>
           </List.Item>
         )}
       </List>
         <Footer className={classes.total}>
-        {`Total: $${handlePrices(calculateTotal(cartitems))}`}
+        {`Total: $${handlePrices(calculateTotal(cartitems.selected))}`}
         </Footer>
       </div>
     );
@@ -183,6 +193,35 @@ const addItem = (incart, item, selectedSize) => {
   else {
     incart.setSelected(incart.selected.concat(item));
   }
+}
+
+function generateKey(length) {
+  var result           = '';
+  var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  var charactersLength = characters.length;
+  for ( var i = 0; i < length; i++ ) {
+     result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+
+const removeItem = (incart, removal) => {
+  var newCart = [...incart.selected];
+  var i = 0;
+  var removed = false;
+
+  while (!removed) {
+    if (incart.selected[i].key == removal) {
+      newCart.splice(i, 1);
+      removed = true;
+    }
+    else {
+      i++;
+    }
+  }
+  console.log(newCart);
+
+  incart.setSelected(newCart);
 }
 
 const ProductList = ({products, sidebar, incart}) => {
@@ -207,7 +246,7 @@ const ProductList = ({products, sidebar, incart}) => {
                   </Card.Content>
                   <Button className={styles.addToCart} 
                           onClick={() => {sidebar.setSidebar(true); 
-                                          addItem(incart, {product, size: selectedSize}, selectedSize)}}>
+                                          addItem(incart, {product, size: selectedSize, key: generateKey(5)}, selectedSize);}}>
                           Add to cart
                   </Button>
                 </Card>
@@ -237,7 +276,7 @@ const App = () => {
   return (
     <div>
       <Sidebar open={sidebar}
-             sidebar={<ShoppingCart cartitems={selected}/>}
+             sidebar={<ShoppingCart cartitems={{selected, setSelected}}/>}
              className={styles.shoppingCart}
              pullRight={true}
              onSetOpen={() => setSidebar(false)}
