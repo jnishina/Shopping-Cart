@@ -110,6 +110,9 @@ const cartStyles = makeStyles(theme => ({
     width: 13,
     height: 13,
     marginLeft: 107
+  },
+  outOfStock: {
+    textAlign: 'center'
   }
 }));
 
@@ -236,17 +239,20 @@ const removeItem = (incart, removal, inventory) => {
 }
 
 const sizeAvailable = (product, inventory, size) => {
-  console.log(inventory[product][size]);
 
   if (inventory[product][size] === 0) {
-    alert("This size is out of stock");
+    return false;
   }
+  return true;
+
+
 };
 
 const Product = ({product, sidebar, inventory, incart}) => {
   const styles = productStyles();
   const sizes = ['S', 'M', 'L', 'XL'];
   var selectedSize = '';
+  var allOut = 0;
 
 
   return(
@@ -257,7 +263,19 @@ const Product = ({product, sidebar, inventory, incart}) => {
           {product.title}
           <p className={styles.description}>{handleDescriptions(product.description)}</p>
         </h5>
-        {sizes.map(size => <Button className={styles.sizes} onClick={() => {sizeAvailable(String(product.sku), inventory.inventory, size); selectedSize = size;}}>{size}</Button>)}
+        {sizes.map(size => { if (sizeAvailable(String(product.sku), inventory.inventory, size)) {
+                              return(
+                                <Button className={styles.sizes} onClick={() => {selectedSize = size;}}>{size}</Button>
+                              );
+                            }
+                            else {
+                              allOut += 1;
+                              if (allOut === 4) {
+                                return(
+                                  <h5>out of stock</h5>
+                                );
+                              }
+                            }})}
         <Divider variant="middle" className={styles.divider}/>
         <h6 className={styles.price}>{`$${handlePrices(product.price)}`}</h6>
       </Card.Content>
