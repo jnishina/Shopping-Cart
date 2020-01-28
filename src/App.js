@@ -119,7 +119,7 @@ const handlePrices = (price) => {
 }
 
 const handleDescriptions = (description) => {
-  if (description == "") {
+  if (description === "") {
     return "No description"
   }
   else {
@@ -137,7 +137,7 @@ const calculateTotal = (cartitems) => {
   return totalPrice
 }
 
-const ShoppingCart = ({cartitems}) => {
+const ShoppingCart = ({cartitems, inventory}) => {
   const classes = cartStyles();
 
   if (cartitems.selected.length === 0) {
@@ -164,7 +164,7 @@ const ShoppingCart = ({cartitems}) => {
               </h6>
             </div>
             <div>
-              <img src={`/data/x.png`} className={classes.x} onClick={() => removeItem(cartitems, cartitem.key)}/>
+              <img src={`/data/x.png`} className={classes.x} onClick={() => removeItem(cartitems, cartitem.key, inventory)}/>
               <h6 className={classes.price}>
                 {`$${handlePrices(cartitem.product.price)}`}
               </h6>
@@ -186,12 +186,16 @@ const selectSize = (size, selectedSize) => (
   selectedSize = size
 );
 
-const addItem = (incart, item, selectedSize) => {
-  if (selectedSize == '') {
+const addItem = (incart, item, selectedSize, inventory) => {
+  var updatedInventory = {...inventory.inventory};
+  
+  if (selectedSize === '') {
     alert('Please select a size');
   }
   else {
     incart.setSelected(incart.selected.concat(item));
+    updatedInventory[item.product.sku][selectedSize] -= 1;
+    inventory.setInventory(updatedInventory)
   }
 }
 
@@ -205,61 +209,113 @@ function generateKey(length) {
   return result;
 }
 
-const removeItem = (incart, removal) => {
+const removeItem = (incart, removal, inventory) => {
   var newCart = [...incart.selected];
   var i = 0;
   var removed = false;
+  var updatedInventory = {...inventory.inventory};
 
   while (!removed) {
-    if (incart.selected[i].key == removal) {
+    if (incart.selected[i].key === removal) {
+      var product = incart.selected[i].product.sku;
+      var sizeOfProduct = incart.selected[i].size;
+      
+      updatedInventory[product][sizeOfProduct] += 1;
+      inventory.setInventory(updatedInventory);
       newCart.splice(i, 1);
+      
       removed = true;
     }
     else {
       i++;
     }
   }
-  console.log(newCart);
-
+  
+  inventory.setInventory(updatedInventory);
   incart.setSelected(newCart);
 }
 
-const ProductList = ({products, sidebar, incart}) => {
+const sizeAvailable = (product, inventory, size) => {
+  console.log(inventory[product][size]);
+
+  if (inventory[product][size] === 0) {
+    alert("This size is out of stock");
+  }
+};
+
+const Product = ({product, sidebar, inventory, incart}) => {
   const styles = productStyles();
   const sizes = ['S', 'M', 'L', 'XL'];
   var selectedSize = '';
 
+
+  return(
+    <Card className={styles.card}>
+      <Card.Image className={styles.image}><img src={`/data/products/${product.sku}_1.jpg`} alt={product.sku}/></Card.Image>
+      <Card.Content> 
+        <h5 className={styles.title}>
+          {product.title}
+          <p className={styles.description}>{handleDescriptions(product.description)}</p>
+        </h5>
+        {sizes.map(size => <Button className={styles.sizes} onClick={() => {sizeAvailable(String(product.sku), inventory.inventory, size); selectedSize = size;}}>{size}</Button>)}
+        <Divider variant="middle" className={styles.divider}/>
+        <h6 className={styles.price}>{`$${handlePrices(product.price)}`}</h6>
+      </Card.Content>
+      <Button className={styles.addToCart} 
+              onClick={() => {sidebar.setSidebar(true); 
+                              addItem(incart, {product, size: selectedSize, key: generateKey(5)}, selectedSize, inventory);}}>
+              Add to cart
+      </Button>
+    </Card>
+  );
+};
+
+const ProductList = ({products, sidebar, incart, inventory}) => {
+  const styles = productStyles();
+
   return(
     <Column.Group vcentered multiline className={styles.container}>
       {products.map(product => 
-              <Column size="one-quarter" key={product.sku}>
-                <Card className={styles.card}>
-                  <Card.Image className={styles.image}><img src={`/data/products/${product.sku}_1.jpg`} alt={product.sku}/></Card.Image>
-                  <Card.Content> 
-                    <h5 className={styles.title}>
-                      {product.title}
-                      <p className={styles.description}>{handleDescriptions(product.description)}</p>
-                    </h5>
-                    {sizes.map(size => <Button className={styles.sizes} color={'blue'} onClick={() => selectedSize = size}>{size}</Button>)}
-                    <Divider variant="middle" className={styles.divider}/>
-                    <h6 className={styles.price}>{`$${handlePrices(product.price)}`}</h6>
-                  </Card.Content>
-                  <Button className={styles.addToCart} 
-                          onClick={() => {sidebar.setSidebar(true); 
-                                          addItem(incart, {product, size: selectedSize, key: generateKey(5)}, selectedSize);}}>
-                          Add to cart
-                  </Button>
-                </Card>
-              </Column>)}
+            <Column size="one-quarter" key={product.sku}>
+              <Product product={product} sidebar={sidebar} inventory={inventory} incart={incart} />
+            </Column>
+      )}
     </Column.Group>
   );
-}
+};
+
 
 const App = () => {
   const [data, setData] = useState({});
   const products = Object.values(data);
   const [sidebar, setSidebar] = useState(false);
   const [selected, setSelected] = useState([]);
+  // const inventoryJSON = {
+  //   "12064273040195392": {
+  //     "S": 0,
+  //     "M": 3,
+  //     "L": 1,
+  //     "XL": 2
+  //   },
+  //   "51498472915966370": {
+  //     "S": 0,
+  //     "M": 2,
+  //     "L": 3,
+  //     "XL": 2
+  //   },
+  //   "10686354557628304": {
+  //     "S": 1,
+  //     "M": 2,
+  //     "L": 2,
+  //     "XL": 1
+  //   },
+  //   "11033926921508488": {
+  //     "S": 3,
+  //     "M": 2,
+  //     "L": 0,
+  //     "XL": 1
+  //   }};
+  const [inventory, setInventory] = useState({});
 
   const styles = productStyles();
 
@@ -269,6 +325,12 @@ const App = () => {
       const json = await response.json();
       setData(json);
     };
+    const fetchInventory = async () => {
+      const response = await fetch('./data/inventory.json');
+      const json = await response.json();
+      setInventory(json);
+    }
+    fetchInventory();
     fetchProducts();
   }, []);
 
@@ -276,7 +338,7 @@ const App = () => {
   return (
     <div>
       <Sidebar open={sidebar}
-             sidebar={<ShoppingCart cartitems={{selected, setSelected}}/>}
+             sidebar={<ShoppingCart cartitems={{selected, setSelected}} inventory={{inventory, setInventory}}/>}
              className={styles.shoppingCart}
              pullRight={true}
              onSetOpen={() => setSidebar(false)}
@@ -284,7 +346,8 @@ const App = () => {
         <Button className={styles.cart} onClick={() => setSidebar(true)}>
           <img src={`/data/shopping-cart.png`} className={styles.cartIcon}/>
         </Button>
-        <ProductList products={products} sidebar={{sidebar, setSidebar}} incart={{selected, setSelected}}/>
+        <ProductList products={products} sidebar={{sidebar, setSidebar}} 
+                     incart={{selected, setSelected}} inventory={{inventory, setInventory}} />
       </Sidebar>
     </div>
   );
